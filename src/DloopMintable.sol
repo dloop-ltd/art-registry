@@ -1,4 +1,4 @@
-pragma solidity ^0.5.16;
+pragma solidity 0.5.17;
 
 import "./DloopWithdraw.sol";
 import "./DloopArtwork.sol";
@@ -31,7 +31,7 @@ contract DloopMintable is DloopWithdraw, DloopArtwork {
         super._safeMint(to, tokenId);
         super._setManaged(tokenId, true);
 
-        super._addTokenToArtwork(artworkId, editionNumber, artistProofNumber);
+        super._updateArtwork(artworkId, editionNumber, artistProofNumber);
 
         emit EditionMinted(
             tokenId,
@@ -40,6 +40,7 @@ contract DloopMintable is DloopWithdraw, DloopArtwork {
             artistProofNumber
         );
 
+        // Special case. If dataType is set, add the data
         if (dataType != 0x0) {
             addEditionData(tokenId, dataType, data);
         }
@@ -53,6 +54,9 @@ contract DloopMintable is DloopWithdraw, DloopArtwork {
         bytes memory data
     ) public onlyMinter returns (bool) {
         require(super._exists(tokenId), "tokenId does not exist");
+        require(dataType != 0x0, "dataType must not be 0x0");
+        require(data.length >= MIN_DATA_LENGTH, "data required");
+        require(data.length <= MAX_DATA_LENGTH, "data exceeds maximum length");
 
         _dataMap[tokenId].push(Data(dataType, data));
 
