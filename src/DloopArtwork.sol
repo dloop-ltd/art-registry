@@ -1,9 +1,15 @@
-pragma solidity ^0.5.16;
+pragma solidity 0.5.17;
 
 import "./DloopGovernance.sol";
 import "./DloopUtil.sol";
 
 contract DloopArtwork is DloopGovernance, DloopUtil {
+    uint16 private constant MAX_EDITION_SIZE = 10000;
+    uint16 private constant MIN_EDITION_SIZE = 1;
+
+    uint8 private constant MAX_ARTIST_PROOF_SIZE = 10;
+    uint8 private constant MIN_ARTIST_PROOF_SIZE = 1;
+
     struct Artwork {
         uint16 editionSize;
         uint16 editionCounter;
@@ -26,10 +32,19 @@ contract DloopArtwork is DloopGovernance, DloopUtil {
         bytes memory data
     ) public onlyMinter returns (bool) {
         require(!_artworkMap[artworkId].hasEntry, "artworkId already exists");
-        require(editionSize <= 10000, "editionSize must not exceed 10000");
-        require(artistProofSize <= 10, "artistProofSize must not exceed 10");
-        require(editionSize > 0, "editionSize must be positive");
-        require(artistProofSize > 0, "artistProofSize must be positive");
+        require(editionSize <= MAX_EDITION_SIZE, "editionSize exceeded");
+        require(
+            editionSize >= MIN_EDITION_SIZE,
+            "editionSize must be positive"
+        );
+        require(
+            artistProofSize <= MAX_ARTIST_PROOF_SIZE,
+            "artistProofSize exceeded"
+        );
+        require(
+            artistProofSize >= MIN_ARTIST_PROOF_SIZE,
+            "artistProofSize must be positive"
+        );
 
         _artworkMap[artworkId].hasEntry = true;
         _artworkMap[artworkId].editionSize = editionSize;
@@ -41,7 +56,7 @@ contract DloopArtwork is DloopGovernance, DloopUtil {
         return true;
     }
 
-    function _addTokenToArtwork(
+    function _updateArtwork(
         uint64 artworkId,
         uint16 editionNumber,
         uint8 artistProofNumber
@@ -55,7 +70,7 @@ contract DloopArtwork is DloopGovernance, DloopUtil {
                 editionNumber <= aw.editionSize,
                 "editionNumber must not exceed editionSize"
             );
-            aw.editionCounter++;
+            aw.editionCounter = aw.editionCounter + 1;
         }
 
         if (artistProofNumber > 0) {
@@ -63,7 +78,7 @@ contract DloopArtwork is DloopGovernance, DloopUtil {
                 artistProofNumber <= aw.artistProofSize,
                 "artistProofNumber must not exceed artistProofSize"
             );
-            aw.artistProofCounter++;
+            aw.artistProofCounter = aw.artistProofCounter + 1;
         }
     }
 
@@ -73,6 +88,10 @@ contract DloopArtwork is DloopGovernance, DloopUtil {
         bytes memory data
     ) public onlyMinter returns (bool) {
         require(_artworkMap[artworkId].hasEntry, "artworkId does not exist");
+        require(artworkId > 0, "artworkId must be greater than 0");
+        require(dataType != 0x0, "dataType must not be 0x0");
+        require(data.length >= MIN_DATA_LENGTH, "data required");
+        require(data.length <= MAX_DATA_LENGTH, "data exceeds maximum length");
 
         _artworkMap[artworkId].dataArray.push(Data(dataType, data));
 

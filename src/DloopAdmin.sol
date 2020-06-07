@@ -1,6 +1,6 @@
-pragma solidity ^0.5.16;
+pragma solidity 0.5.17;
 
-import "openzeppelin-solidity/contracts/token/ERC721/ERC721.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract DloopAdmin {
     mapping(address => bool) private _adminMap;
@@ -29,14 +29,15 @@ contract DloopAdmin {
 
     function addAdmin(address account) public onlyAdmin {
         require(!_adminMap[account], "account already has admin role");
+        require(account != address(0x0), "account must not be 0x0");
         _adminMap[account] = true;
-        _adminCount = _adminCount + 1;
+        _adminCount = SafeMath.add(_adminCount, 1);
         emit AdminAdded(account);
     }
 
     function renounceAdmin() public onlyAdmin {
         _adminMap[msg.sender] = false;
-        _adminCount = _adminCount - 1;
+        _adminCount = SafeMath.sub(_adminCount, 1);
         require(_adminCount > 0, "minimum one admin required");
         emit AdminRenounced(msg.sender);
     }
